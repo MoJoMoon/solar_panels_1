@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarMaster Pro VR Trainer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #FFF8DC 50%, #FFE4B5 100%);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #canvas {
+            display: block;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            min-width: 350px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            min-width: 320px;
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-library {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            min-width: 280px;
+        }
+
+        .financial-display {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            background: rgba(15, 25, 35, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            pointer-events: auto;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 255, 127, 0.3);
+            min-width: 300px;
+        }
+
+        .bottom-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+            background: rgba(15, 25, 35, 0.9);
+            padding: 15px 25px;
+            border-radius: 25px;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-button {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+            background: linear-gradient(135deg, #FFF700, #FFB500);
+        }
+
+        .action-button.active {
+            background: linear-gradient(135deg, #00FF7F, #32CD32);
+            color: #000;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #FFD700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #333, #555);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.7);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-item span:first-child {
+            color: #B0B0B0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            font-weight: 700;
+            color: #00FF7F;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
+        }
+
+        .status-warning {
+            color: #FFA500;
+            text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+        }
+
+        .status-excellent {
+            color: #00FF7F;
+            text-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
+        }
+
+        .panel-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .panel-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: rgba(255, 215, 0, 0.3);
+            transform: translateX(5px);
+        }
+
+        .panel-item.selected {
+            background: rgba(0, 255, 127, 0.1);
+            border-color: rgba(0, 255, 127, 0.5);
+        }
+
+        .panel-icon {
+            width: 40px;
+            height: 30px;
+            background: linear-gradient(135deg, #4A90A4, #2E5266);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .financial-metric {
+            background: rgba(0, 255, 127, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #00FF7F;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00FF7F;
+            text-shadow: 0 0 10px rgba(0, 255, 127, 0.3);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #B0B0B0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FF7F, #32CD32);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .sun-indicator {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .tutorial-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            pointer-events: auto;
+        }
+
+        .tutorial-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 600px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .tutorial-button {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            margin: 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .tutorial-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        
+        <!-- Tutorial overlay -->
+        <div class="tutorial-overlay" id="tutorialOverlay">
+            <div class="tutorial-content">
+                <h1 style="color: #FFD700; margin-bottom: 20px; font-size: 32px;">🌞 Welcome to SolarMaster Pro VR!</h1>
+                <p style="font-size: 18px; margin-bottom: 25px; line-height: 1.6;">
+                    Design and optimize solar panel installations in this interactive 3D environment. 
+                    Analyze roof conditions, place panels, and maximize energy efficiency!
+                </p>
+                <div style="margin: 30px 0;">
+                    <h3 style="color: #00FF7F; margin-bottom: 15px;">Choose Your Role:</h3>
+                    <button class="tutorial-button" onclick="startSimulation('installer')">🔧 Solar Installer</button>
+                    <button class="tutorial-button" onclick="startSimulation('engineer')">⚡ System Engineer</button>
+                    <button class="tutorial-button" onclick="startSimulation('analyst')">📊 Energy Analyst</button>
+                </div>
+                <p style="font-size: 14px; color: #B0B0B0;">
+                    Drag to rotate • Click panels to place • Use time controls for sun analysis
+                </p>
+            </div>
+        </div>
+        
+        <div class="ui-overlay">
+            <!-- Sun position indicator -->
+            <div class="sun-indicator" id="sunIndicator">
+                ☀️ <span id="timeDisplay">12:00 PM</span> | <span id="seasonDisplay">Summer</span>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h3 style="margin-bottom: 20px; color: #FFD700; text-align: center; font-size: 20px;">
+                    ⚙️ ANALYSIS CONTROLS
+                </h3>
+                
+                <div class="slider-container">
+                    <label class="slider-label">Time of Day: <span id="timeValue">12:00</span></label>
+                    <input type="range" class="slider" id="timeSlider" min="6" max="18" value="12" step="0.5">
+                </div>
+                
+                <div class="slider-container">
+                    <label class="slider-label">Season: <span id="seasonValue">Summer</span></label>
+                    <input type="range" class="slider" id="seasonSlider" min="0" max="3" value="1" step="1">
+                </div>
+
+                <div class="slider-container">
+                    <label class="slider-label">Panel Tilt: <span id="tiltValue">30°</span></label>
+                    <input type="range" class="slider" id="tiltSlider" min="0" max="60" value="30" step="5">
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="status-panel">
+                <h3 style="margin-bottom: 20px; color: #00FF7F; text-align: center; font-size: 20px;">
+                    📊 SYSTEM STATUS
+                </h3>
+                
+                <div class="status-item">
+                    <span>Total Panels</span>
+                    <span class="status-value" id="panelCount">0</span>
+                </div>
+                
+                <div class="status-item">
+                    <span>System Capacity</span>
+                    <span class="status-value" id="systemCapacity">0.0 kW</span>
+                </div>
+                
+                <div class="status-item">
+                    <span>Roof Coverage</span>
+                    <span class="status-value" id="roofCoverage">0%</span>
+                </div>
+                
+                <div class="status-item">
+                    <span>Avg Efficiency</span>
+                    <span class="status-value" id="avgEfficiency">0%</span>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 12px; color: #B0B0B0; margin-bottom: 5px;">SYSTEM EFFICIENCY</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="efficiencyProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Library -->
+            <div class="panel-library">
+                <h3 style="margin-bottom: 15px; color: #FFA500; text-align: center;">
+                    🔋 PANEL LIBRARY
+                </h3>
+                
+                <div class="panel-item selected" data-panel="standard">
+                    <div style="display: flex; align-items: center;">
+                        <div class="panel-icon">320W</div>
+                        <div>
+                            <div style="font-weight: bold;">Standard Panel</div>
+                            <div style="font-size: 12px; color: #B0B0B0;">$200 • 19.5% eff</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel-item" data-panel="premium">
+                    <div style="display: flex; align-items: center;">
+                        <div class="panel-icon" style="background: linear-gradient(135deg, #00FF7F, #32CD32);">400W</div>
+                        <div>
+                            <div style="font-weight: bold;">Premium Panel</div>
+                            <div style="font-size: 12px; color: #B0B0B0;">$300 • 22.1% eff</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel-item" data-panel="bifacial">
+                    <div style="display: flex; align-items: center;">
+                        <div class="panel-icon" style="background: linear-gradient(135deg, #FFD700, #FFA500);">450W</div>
+                        <div>
+                            <div style="font-weight: bold;">Bifacial Panel</div>
+                            <div style="font-size: 12px; color: #B0B0B0;">$350 • 21.8% eff</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button class="action-button" id="clearPanelsBtn" style="width: 100%; font-size: 14px; padding: 10px;">
+                        🗑️ Clear All Panels
+                    </button>
+                </div>
+            </div>
+
+            <!-- Financial Display -->
+            <div class="financial-display">
+                <h3 style="margin-bottom: 15px; color: #00FF7F; text-align: center;">
+                    💰 FINANCIAL ANALYSIS
+                </h3>
+                
+                <div class="financial-metric">
+                    <div class="metric-value" id="totalCost">$0</div>
+                    <div class="metric-label">Installation Cost</div>
+                </div>
+                
+                <div class="financial-metric">
+                    <div class="metric-value" id="annualSavings">$0</div>
+                    <div class="metric-label">Annual Savings</div>
+                </div>
+                
+                <div class="financial-metric">
+                    <div class="metric-value" id="paybackPeriod">-- years</div>
+                    <div class="metric-label">Payback Period</div>
+                </div>
+
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 12px; color: #B0B0B0; margin-bottom: 5px;">25-YEAR ROI</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="roiProgress" style="width: 0%"></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 5px; color: #00FF7F; font-weight: bold;" id="roiValue">$0</div>
+                </div>
+            </div>
+
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <button class="action-button active" id="designBtn">🏠 Design Mode</button>
+                <button class="action-button" id="optimizeBtn">⚡ Auto-Optimize</button>
+                <button class="action-button" id="challengeBtn">🎯 Challenge Mode</button>
+                <button class="action-button" id="vrBtn" style="background: linear-gradient(135deg, #FF1493, #FF69B4);">🥽 Enter VR</button>
+            </div>
+        </div>
+
+        <!-- Challenge Alert -->
+        <div class="tutorial-overlay" id="challengeAlert" style="display: none;">
+            <div class="tutorial-content">
+                <h2 style="color: #FF4500; margin-bottom: 20px; font-size: 28px;">⚠️ INSTALLATION CHALLENGE</h2>
+                <p id="challengeDescription" style="margin-bottom: 20px; font-size: 18px; line-height: 1.5;">
+                    A tree is casting shadows on the south-facing roof section, reducing efficiency by 35%
+                </p>
+                <p id="challengeConsequence" style="margin-bottom: 25px; font-size: 16px; opacity: 0.9;">
+                    How should you address this issue?
+                </p>
+                <div id="challengeButtons">
+                    <button class="tutorial-button" onclick="handleChallenge('relocate')">Relocate Panels</button>
+                    <button class="tutorial-button" onclick="handleChallenge('address')">Address Root Cause</button>
+                    <button class="tutorial-button" onclick="handleChallenge('ignore')">Continue As Planned</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Global variables
+        let scene, camera, renderer;
+        let house, roof, solarPanels = [];
+        let sun, sunLight;
+        let selectedPanelType = 'standard';
+        let timeOfDay = 12;
+        let season = 1;
+        let panelTilt = 30;
+        let mousePosition = new THREE.Vector2();
+        let raycaster = new THREE.Raycaster();
+        let isDragging = false;
+        let vrSupported = false;
+        let vrSession = null;
+        let vrController1, vrController2;
+        let vrControllerGrip1, vrControllerGrip2;
+        let vrButton;
+
+        // System parameters
+        const systemStats = {
+            totalPanels: 0,
+            totalCapacity: 0,
+            roofCoverage: 0,
+            avgEfficiency: 0,
+            totalCost: 0,
+            annualSavings: 0,
+            paybackPeriod: 0,
+            roi25Year: 0
+        };
+
+        // Panel types configuration
+        const panelTypes = {
+            standard: { power: 320, cost: 200, efficiency: 19.5, color: 0x2E5266 },
+            premium: { power: 400, cost: 300, efficiency: 22.1, color: 0x00FF7F },
+            bifacial: { power: 450, cost: 350, efficiency: 21.8, color: 0xFFD700 }
+        };
+
+        // House configuration
+        const houseConfig = {
+            width: 12,
+            length: 16,
+            height: 8,
+            roofPitch: 30
+        };
+
+        // Global functions for HTML onclick handlers
+        window.startSimulation = function(role) {
+            console.log('Starting simulation with role:', role);
+            document.getElementById('tutorialOverlay').style.display = 'none';
+            init();
+        };
+
+        window.handleChallenge = function(action) {
+            const challenge = window.currentChallenge;
+            if (!challenge) return;
+            
+            const solution = challenge.solutions[action];
+            const resultColor = solution.correct ? '#00FF7F' : '#FF4500';
+            const resultIcon = solution.correct ? '✅' : '❌';
+            const scoreChange = solution.correct ? '+100' : '-50';
+            
+            const alert = document.getElementById('challengeAlert');
+            alert.innerHTML = '<div class="tutorial-content">' +
+                '<h2 style="color: ' + resultColor + '; margin-bottom: 20px; font-size: 24px;">' + 
+                resultIcon + ' ' + (solution.correct ? 'EXCELLENT DECISION!' : 'LEARNING OPPORTUNITY') + '</h2>' +
+                '<p style="margin-bottom: 20px; font-size: 16px; line-height: 1.5;">' + solution.result + '</p>' +
+                '<div style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px;">' +
+                '<div style="font-size: 18px; font-weight: bold;">Score: ' + scoreChange + ' points</div>' +
+                '<div style="font-size: 14px; margin-top: 5px; opacity: 0.8;">' +
+                (solution.correct ? 'Professional expertise demonstrated!' : 'Consider safety and long-term performance.') +
+                '</div></div>' +
+                '<button class="tutorial-button" onclick="document.getElementById(\'challengeAlert\').style.display=\'none\'">Continue Training</button>' +
+                '</div>';
+                
+            // Apply visual effects if correct
+            if (solution.correct && solarPanels.length > 0) {
+                solarPanels.forEach(panel => {
+                    // Boost panel efficiency visually
+                    panel.material.color.setHex(0x00FF7F);
+                    setTimeout(() => {
+                        panel.material.color.setHex(panelTypes[panel.userData.type].color);
+                    }, 2000);
+                });
+            }
+        };
+
+        function init() {
+            console.log('Initializing Solar Panel VR Trainer...');
+            
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.Fog(0x87CEEB, 50, 200);
+
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(20, 15, 20);
+            camera.lookAt(0, 0, 0);
+
+            // Create renderer
+            const canvas = document.getElementById('canvas');
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.xr.enabled = true;
+
+            // Setup VR
+            setupVR();
+
+            // Create lighting
+            createLighting();
+            
+            // Create environment
+            createEnvironment();
+            
+            // Create house
+            createHouse();
+            
+            // Create sun system
+            createSunSystem();
+            
+            // Setup controls
+            setupControls();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Start animation
+            animate();
+            
+            console.log('Solar Panel VR Trainer initialized successfully');
+        }
+
+        function setupVR() {
+            // Check for WebXR support
+            if ('xr' in navigator) {
+                navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+                    vrSupported = supported;
+                    updateVRButton();
+                    if (supported) {
+                        setupVRControllers();
+                    }
+                }).catch(() => {
+                    vrSupported = false;
+                    updateVRButton();
+                });
+            } else {
+                vrSupported = false;
+                updateVRButton();
+            }
+        }
+
+        function updateVRButton() {
+            const vrBtn = document.getElementById('vrBtn');
+            if (vrSupported) {
+                vrBtn.textContent = '🥽 Enter VR';
+                vrBtn.style.background = 'linear-gradient(135deg, #FF1493, #FF69B4)';
+                vrBtn.disabled = false;
+            } else {
+                vrBtn.textContent = '🥽 VR Not Available';
+                vrBtn.style.background = 'linear-gradient(135deg, #666, #888)';
+                vrBtn.disabled = true;
+                vrBtn.title = 'WebXR not supported or no VR headset detected';
+            }
+        }
+
+        function setupVRControllers() {
+            // VR Controller 1
+            vrController1 = renderer.xr.getController(0);
+            vrController1.addEventListener('selectstart', onVRSelectStart);
+            vrController1.addEventListener('selectend', onVRSelectEnd);
+            scene.add(vrController1);
+
+            // VR Controller 2
+            vrController2 = renderer.xr.getController(1);
+            vrController2.addEventListener('selectstart', onVRSelectStart);
+            vrController2.addEventListener('selectend', onVRSelectEnd);
+            scene.add(vrController2);
+
+            // Controller grips for hand tracking
+            vrControllerGrip1 = renderer.xr.getControllerGrip(0);
+            scene.add(vrControllerGrip1);
+
+            vrControllerGrip2 = renderer.xr.getControllerGrip(1);
+            scene.add(vrControllerGrip2);
+
+            // Add controller visual indicators
+            addVRControllerModels();
+        }
+
+        function addVRControllerModels() {
+            // Simple controller visualization
+            const geometry = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 6);
+            const material = new THREE.MeshLambertMaterial({ color: 0xFF1493 });
+
+            const controller1Model = new THREE.Mesh(geometry, material);
+            controller1Model.rotation.x = -Math.PI / 2;
+            vrController1.add(controller1Model);
+
+            const controller2Model = new THREE.Mesh(geometry, material);
+            controller2Model.rotation.x = -Math.PI / 2;
+            vrController2.add(controller2Model);
+
+            // Add ray visualization for pointing
+            const rayGeometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, -5)
+            ]);
+            const rayMaterial = new THREE.LineBasicMaterial({ color: 0xFF1493 });
+
+            const ray1 = new THREE.Line(rayGeometry, rayMaterial);
+            vrController1.add(ray1);
+
+            const ray2 = new THREE.Line(rayGeometry, rayMaterial);
+            vrController2.add(ray2);
+        }
+
+        function onVRSelectStart(event) {
+            const controller = event.target;
+            
+            // Use controller for raycasting
+            raycaster.setFromXRController(controller);
+            const intersects = raycaster.intersectObjects(roof.children);
+
+            if (intersects.length > 0) {
+                const intersection = intersects[0];
+                const position = intersection.point.clone();
+                const normal = intersection.face.normal.clone();
+                normal.transformDirection(intersection.object.matrixWorld);
+                position.add(normal.multiplyScalar(0.1));
+
+                // Place panel at VR controller position
+                placeSolarPanel(position, intersection.object);
+                
+                // Haptic feedback if available
+                if (controller.gamepad && controller.gamepad.hapticActuators && controller.gamepad.hapticActuators[0]) {
+                    controller.gamepad.hapticActuators[0].pulse(0.5, 100);
+                }
+            }
+        }
+
+        function onVRSelectEnd(event) {
+            // Handle select end if needed
+        }
+
+        function enterVR() {
+            if (!vrSupported) {
+                alert('VR is not supported on this device or browser. Please use a VR-compatible browser like Chrome or Firefox with a connected VR headset.');
+                return;
+            }
+
+            // Request VR session
+            navigator.xr.requestSession('immersive-vr', {
+                requiredFeatures: ['local-floor'],
+                optionalFeatures: ['hand-tracking', 'layers']
+            }).then((session) => {
+                vrSession = session;
+                renderer.xr.setSession(session);
+                
+                // Hide 2D UI when in VR
+                document.querySelector('.ui-overlay').style.display = 'none';
+                
+                // Position camera for standing experience
+                const referenceSpace = renderer.xr.getReferenceSpace();
+                if (referenceSpace) {
+                    // Start user at a good viewing position
+                    camera.position.set(0, 1.6, 10); // Standing height, back from house
+                    camera.lookAt(0, 5, 0);
+                }
+                
+                // Add VR-specific UI elements to the scene
+                addVRUI();
+                
+                session.addEventListener('end', () => {
+                    vrSession = null;
+                    // Show 2D UI when exiting VR
+                    document.querySelector('.ui-overlay').style.display = 'block';
+                    removeVRUI();
+                });
+                
+                console.log('VR session started successfully');
+                
+            }).catch((error) => {
+                console.error('Failed to start VR session:', error);
+                alert('Failed to start VR session. Please make sure your VR headset is connected and browser has VR permissions.');
+            });
+        }
+
+        function addVRUI() {
+            // Create floating panel selector in VR space
+            const uiGroup = new THREE.Group();
+            uiGroup.position.set(-3, 2, 5);
+            uiGroup.userData = { type: 'vrUI' };
+            
+            // Panel for VR UI
+            const uiPanelGeometry = new THREE.PlaneGeometry(2, 1.5);
+            const uiPanelMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x333333,
+                transparent: true,
+                opacity: 0.8
+            });
+            const uiPanel = new THREE.Mesh(uiPanelGeometry, uiPanelMaterial);
+            uiGroup.add(uiPanel);
+            
+            // Add panel type indicators
+            const panelTypes = ['standard', 'premium', 'bifacial'];
+            panelTypes.forEach((type, index) => {
+                const panelGeometry = new THREE.BoxGeometry(0.4, 0.2, 0.05);
+                const panelData = window.panelTypes ? window.panelTypes[type] : { color: 0x666666 };
+                const panelMaterial = new THREE.MeshLambertMaterial({ color: panelData.color || 0x666666 });
+                const panelMesh = new THREE.Mesh(panelGeometry, panelMaterial);
+                
+                panelMesh.position.set(-0.6 + index * 0.6, 0.3, 0.1);
+                panelMesh.userData = { panelType: type, clickable: true };
+                uiGroup.add(panelMesh);
+                
+                // Add text label (simplified)
+                const textGeometry = new THREE.PlaneGeometry(0.4, 0.1);
+                const textMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+                const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                textMesh.position.set(-0.6 + index * 0.6, 0, 0.1);
+                uiGroup.add(textMesh);
+            });
+            
+            // Instructions
+            const instructionsGeometry = new THREE.PlaneGeometry(1.8, 0.3);
+            const instructionsMaterial = new THREE.MeshLambertMaterial({ color: 0x00FF7F });
+            const instructions = new THREE.Mesh(instructionsGeometry, instructionsMaterial);
+            instructions.position.set(0, -0.5, 0.1);
+            uiGroup.add(instructions);
+            
+            scene.add(uiGroup);
+        }
+
+        function removeVRUI() {
+            // Remove VR-specific UI elements
+            const vrUIElements = scene.children.filter(child => 
+                child.userData && child.userData.type === 'vrUI');
+            vrUIElements.forEach(element => scene.remove(element));
+        }
+
+        function createLighting() {
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+            scene.add(ambientLight);
+
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            scene.add(sunLight);
+
+            const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x3a5f3a, 0.6);
+            scene.add(hemisphereLight);
+        }
+
+        function createEnvironment() {
+            const groundGeometry = new THREE.PlaneGeometry(100, 100);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x3a5f3a });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            ground.userData = { type: 'ground' };
+            scene.add(ground);
+
+            // Add some trees for context
+            for (let i = 0; i < 8; i++) {
+                const treeGroup = new THREE.Group();
+                
+                // Trunk
+                const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.5, 4, 8);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.y = 2;
+                trunk.castShadow = true;
+                trunk.userData = { type: 'trunk' };
+                treeGroup.add(trunk);
+
+                // Foliage
+                const foliageGeometry = new THREE.SphereGeometry(2, 8, 6);
+                const foliageMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+                foliage.position.y = 5;
+                foliage.castShadow = true;
+                foliage.userData = { type: 'foliage' };
+                treeGroup.add(foliage);
+
+                treeGroup.position.set(
+                    (Math.random() - 0.5) * 40,
+                    0,
+                    (Math.random() - 0.5) * 40
+                );
+                treeGroup.userData = { type: 'tree' };
+                scene.add(treeGroup);
+            }
+
+            // Create fallen leaves (initially invisible)
+            createFallenLeaves();
+
+            // Create snow system (initially invisible)
+            createSnowSystem();
+        }
+
+        function createFallenLeaves() {
+            const leafGroup = new THREE.Group();
+            leafGroup.userData = { type: 'fallenLeaves' };
+            
+            for (let i = 0; i < 200; i++) {
+                const leafGeometry = new THREE.PlaneGeometry(0.3, 0.2);
+                const leafColors = [0xFF6347, 0xFF8C00, 0xFFD700, 0xDC143C, 0x8B4513];
+                const leafColor = leafColors[Math.floor(Math.random() * leafColors.length)];
+                const leafMaterial = new THREE.MeshLambertMaterial({ 
+                    color: leafColor,
+                    transparent: true,
+                    opacity: 0.8,
+                    side: THREE.DoubleSide
+                });
+                
+                const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+                leaf.position.set(
+                    (Math.random() - 0.5) * 80,
+                    0.1,
+                    (Math.random() - 0.5) * 80
+                );
+                leaf.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+                leaf.rotation.z = Math.random() * Math.PI * 2;
+                leaf.scale.set(
+                    0.5 + Math.random() * 0.5,
+                    0.5 + Math.random() * 0.5,
+                    1
+                );
+                
+                leafGroup.add(leaf);
+            }
+            
+            leafGroup.visible = false;
+            scene.add(leafGroup);
+        }
+
+        function createSnowSystem() {
+            // Snow on ground
+            const snowGroundGroup = new THREE.Group();
+            snowGroundGroup.userData = { type: 'snowGround' };
+            
+            for (let i = 0; i < 100; i++) {
+                const snowPatchGeometry = new THREE.CircleGeometry(Math.random() * 2 + 0.5, 8);
+                const snowPatchMaterial = new THREE.MeshLambertMaterial({ 
+                    color: 0xFFFFFF,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const snowPatch = new THREE.Mesh(snowPatchGeometry, snowPatchMaterial);
+                snowPatch.position.set(
+                    (Math.random() - 0.5) * 100,
+                    0.05,
+                    (Math.random() - 0.5) * 100
+                );
+                snowPatch.rotation.x = -Math.PI / 2;
+                
+                snowGroundGroup.add(snowPatch);
+            }
+            
+            snowGroundGroup.visible = false;
+            scene.add(snowGroundGroup);
+
+            // Falling snow particles
+            const snowParticleCount = 1000;
+            const snowGeometry = new THREE.BufferGeometry();
+            const snowPositions = new Float32Array(snowParticleCount * 3);
+            const snowVelocities = new Float32Array(snowParticleCount * 3);
+
+            for (let i = 0; i < snowParticleCount; i++) {
+                const i3 = i * 3;
+                snowPositions[i3] = (Math.random() - 0.5) * 100;
+                snowPositions[i3 + 1] = Math.random() * 50 + 10;
+                snowPositions[i3 + 2] = (Math.random() - 0.5) * 100;
+                
+                snowVelocities[i3] = (Math.random() - 0.5) * 0.5;
+                snowVelocities[i3 + 1] = -Math.random() * 2 - 1;
+                snowVelocities[i3 + 2] = (Math.random() - 0.5) * 0.5;
+            }
+
+            snowGeometry.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+            snowGeometry.setAttribute('velocity', new THREE.BufferAttribute(snowVelocities, 3));
+
+            const snowMaterial = new THREE.PointsMaterial({
+                color: 0xFFFFFF,
+                size: 3,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const snowParticles = new THREE.Points(snowGeometry, snowMaterial);
+            snowParticles.userData = { type: 'snowParticles', velocities: snowVelocities };
+            snowParticles.visible = false;
+            scene.add(snowParticles);
+        }
+
+        function createHouse() {
+            house = new THREE.Group();
+
+            // Main house structure
+            const houseGeometry = new THREE.BoxGeometry(houseConfig.width, houseConfig.height, houseConfig.length);
+            const houseMaterial = new THREE.MeshLambertMaterial({ color: 0xF5F5DC });
+            const houseBody = new THREE.Mesh(houseGeometry, houseMaterial);
+            houseBody.position.y = houseConfig.height / 2;
+            houseBody.castShadow = true;
+            houseBody.receiveShadow = true;
+            house.add(houseBody);
+
+            // Create roof
+            createDetailedRoof();
+
+            // Add chimney
+            const chimneyGeometry = new THREE.BoxGeometry(1, 3, 1);
+            const chimneyMaterial = new THREE.MeshLambertMaterial({ color: 0x8B0000 });
+            const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+            chimney.position.set(-3, houseConfig.height + 3, 2);
+            chimney.castShadow = true;
+            house.add(chimney);
+
+            // Add HVAC unit
+            const hvacGeometry = new THREE.BoxGeometry(2, 1, 1.5);
+            const hvacMaterial = new THREE.MeshLambertMaterial({ color: 0x708090 });
+            const hvac = new THREE.Mesh(hvacGeometry, hvacMaterial);
+            hvac.position.set(4, houseConfig.height + 1.5, -1);
+            hvac.castShadow = true;
+            house.add(hvac);
+
+            scene.add(house);
+        }
+
+        function createDetailedRoof() {
+            roof = new THREE.Group();
+
+            // South-facing roof section (main solar area)
+            const southRoofGeometry = new THREE.PlaneGeometry(houseConfig.width, houseConfig.length * 0.6);
+            const southRoofMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const southRoof = new THREE.Mesh(southRoofGeometry, southRoofMaterial);
+            
+            const roofHeight = houseConfig.height + 2;
+            const roofAngle = (houseConfig.roofPitch * Math.PI) / 180;
+            southRoof.position.set(0, roofHeight, houseConfig.length * 0.15);
+            southRoof.rotation.x = -roofAngle;
+            southRoof.castShadow = true;
+            southRoof.receiveShadow = true;
+            southRoof.userData = { 
+                section: 'south', 
+                condition: 'excellent', 
+                area: houseConfig.width * houseConfig.length * 0.6 
+            };
+            roof.add(southRoof);
+
+            // North-facing roof section
+            const northRoofGeometry = new THREE.PlaneGeometry(houseConfig.width, houseConfig.length * 0.6);
+            const northRoofMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x8B4513,
+                transparent: true,
+                opacity: 0.9 
+            });
+            const northRoof = new THREE.Mesh(northRoofGeometry, northRoofMaterial);
+            northRoof.position.set(0, roofHeight, -houseConfig.length * 0.15);
+            northRoof.rotation.x = roofAngle;
+            northRoof.castShadow = true;
+            northRoof.receiveShadow = true;
+            northRoof.userData = { 
+                section: 'north', 
+                condition: 'fair', 
+                area: houseConfig.width * houseConfig.length * 0.6 
+            };
+            roof.add(northRoof);
+
+            // East roof section
+            const eastRoofGeometry = new THREE.PlaneGeometry(houseConfig.length * 0.4, houseConfig.width * 0.5);
+            const eastRoofMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x8B4513,
+                transparent: true,
+                opacity: 0.9 
+            });
+            const eastRoof = new THREE.Mesh(eastRoofGeometry, eastRoofMaterial);
+            eastRoof.position.set(houseConfig.width * 0.45, roofHeight - 0.5, 0);
+            eastRoof.rotation.x = -Math.PI / 2;
+            eastRoof.rotation.z = -roofAngle * 0.7;
+            eastRoof.castShadow = true;
+            eastRoof.receiveShadow = true;
+            eastRoof.userData = { 
+                section: 'east', 
+                condition: 'good', 
+                area: houseConfig.length * 0.4 * houseConfig.width * 0.5 
+            };
+            roof.add(eastRoof);
+
+            // West roof section
+            const westRoofGeometry = new THREE.PlaneGeometry(houseConfig.length * 0.4, houseConfig.width * 0.5);
+            const westRoofMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x8B4513,
+                transparent: true,
+                opacity: 0.9 
+            });
+            const westRoof = new THREE.Mesh(westRoofGeometry, westRoofMaterial);
+            westRoof.position.set(-houseConfig.width * 0.45, roofHeight - 0.5, 0);
+            westRoof.rotation.x = -Math.PI / 2;
+            westRoof.rotation.z = roofAngle * 0.7;
+            westRoof.castShadow = true;
+            westRoof.receiveShadow = true;
+            westRoof.userData = { 
+                section: 'west', 
+                condition: 'good', 
+                area: houseConfig.length * 0.4 * houseConfig.width * 0.5 
+            };
+            roof.add(westRoof);
+
+            house.add(roof);
+        }
+
+        function createSunSystem() {
+            const sunGeometry = new THREE.SphereGeometry(1, 16, 16);
+            const sunMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFD700, 
+                emissive: 0xFFD700, 
+                emissiveIntensity: 0.5 
+            });
+            sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            scene.add(sun);
+            updateSunPosition();
+        }
+
+        function updateSunPosition() {
+            const hourAngle = ((timeOfDay - 12) / 12) * Math.PI;
+            const seasonOffset = (season - 1.5) * 0.4; // More dramatic seasonal variation
+            const elevation = Math.max(0.1, Math.sin(Math.PI / 3 + seasonOffset) * Math.cos(hourAngle));
+            const azimuth = hourAngle;
+
+            const sunDistance = 40;
+            const sunX = sunDistance * Math.sin(azimuth) * Math.cos(elevation);
+            const sunY = sunDistance * elevation;
+            const sunZ = sunDistance * Math.cos(azimuth) * Math.cos(elevation);
+
+            sun.position.set(sunX, sunY, sunZ);
+            sunLight.position.copy(sun.position);
+            sunLight.target.position.set(0, 0, 0);
+            sunLight.target.updateMatrixWorld();
+
+            // Update sun intensity based on season and time
+            let intensity = Math.max(0.3, elevation * 1.5);
+            if (season === 0) intensity *= 0.7; // Winter is dimmer
+            if (season === 2) intensity *= 1.2; // Summer is brighter
+            sunLight.intensity = intensity;
+
+            // Update sun color based on season
+            let sunColor = new THREE.Color(0xFFFFAA);
+            if (season === 0) sunColor = new THREE.Color(0xCCCCFF); // Winter - cooler light
+            if (season === 3) sunColor = new THREE.Color(0xFFCC88); // Fall - warmer light
+            sunLight.color = sunColor;
+            sun.material.color = sunColor;
+
+            // Update environment for season
+            updateSeasonalEnvironment();
+
+            const seasons = ['Winter', 'Spring', 'Summer', 'Fall'];
+            const hours = Math.floor(timeOfDay);
+            const minutes = Math.round((timeOfDay - hours) * 60);
+            const timeString = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            document.getElementById('timeDisplay').textContent = timeString + ' ' + ampm;
+            document.getElementById('seasonDisplay').textContent = seasons[season];
+        }
+
+        function updateSeasonalEnvironment() {
+            // Get references to environmental elements
+            const ground = scene.children.find(child => child.userData && child.userData.type === 'ground');
+            const trees = scene.children.filter(child => child.userData && child.userData.type === 'tree');
+            const fallenLeaves = scene.children.find(child => child.userData && child.userData.type === 'fallenLeaves');
+            const snowGround = scene.children.find(child => child.userData && child.userData.type === 'snowGround');
+            const snowParticles = scene.children.find(child => child.userData && child.userData.type === 'snowParticles');
+
+            // Reset all seasonal elements
+            if (fallenLeaves) fallenLeaves.visible = false;
+            if (snowGround) snowGround.visible = false;
+            if (snowParticles) snowParticles.visible = false;
+
+            switch (season) {
+                case 0: // Winter
+                    // Snow-covered ground
+                    if (ground) ground.material.color.setHex(0xF0F8FF);
+                    
+                    // Snow on trees - make foliage white/light
+                    trees.forEach(tree => {
+                        const foliage = tree.children.find(child => child.userData && child.userData.type === 'foliage');
+                        if (foliage) {
+                            foliage.material.color.setHex(0xF0F8FF);
+                            foliage.scale.set(0.7, 0.7, 0.7); // Smaller in winter
+                        }
+                    });
+                    
+                    // Show snow on ground and falling snow
+                    if (snowGround) snowGround.visible = true;
+                    if (snowParticles) snowParticles.visible = true;
+                    
+                    // Update scene background to winter sky
+                    scene.background = new THREE.Color(0xE6F3FF);
+                    scene.fog.color.setHex(0xE6F3FF);
+                    break;
+
+                case 1: // Spring
+                    // Fresh green ground
+                    if (ground) ground.material.color.setHex(0x32CD32);
+                    
+                    // Light green foliage
+                    trees.forEach(tree => {
+                        const foliage = tree.children.find(child => child.userData && child.userData.type === 'foliage');
+                        if (foliage) {
+                            foliage.material.color.setHex(0x90EE90);
+                            foliage.scale.set(0.9, 0.9, 0.9); // Growing back
+                        }
+                    });
+                    
+                    // Clear spring sky
+                    scene.background = new THREE.Color(0x87CEEB);
+                    scene.fog.color.setHex(0x87CEEB);
+                    break;
+
+                case 2: // Summer
+                    // Rich green ground
+                    if (ground) ground.material.color.setHex(0x228B22);
+                    
+                    // Full, dark green foliage
+                    trees.forEach(tree => {
+                        const foliage = tree.children.find(child => child.userData && child.userData.type === 'foliage');
+                        if (foliage) {
+                            foliage.material.color.setHex(0x006400);
+                            foliage.scale.set(1.2, 1.2, 1.2); // Full size
+                        }
+                    });
+                    
+                    // Bright summer sky
+                    scene.background = new THREE.Color(0x87CEEB);
+                    scene.fog.color.setHex(0x87CEEB);
+                    break;
+
+                case 3: // Fall/Autumn
+                    // Brown/tan ground with fallen leaves
+                    if (ground) ground.material.color.setHex(0x8B7355);
+                    
+                    // Orange/red/yellow foliage
+                    trees.forEach((tree, index) => {
+                        const foliage = tree.children.find(child => child.userData && child.userData.type === 'foliage');
+                        if (foliage) {
+                            const fallColors = [0xFF6347, 0xFF8C00, 0xFFD700, 0xDC143C, 0xFF4500];
+                            foliage.material.color.setHex(fallColors[index % fallColors.length]);
+                            foliage.scale.set(0.8, 0.8, 0.8); // Slightly smaller
+                        }
+                    });
+                    
+                    // Show fallen leaves
+                    if (fallenLeaves) {
+                        fallenLeaves.visible = true;
+                        // Animate leaves gently swaying
+                        fallenLeaves.children.forEach((leaf, index) => {
+                            leaf.rotation.z += Math.sin(Date.now() * 0.001 + index) * 0.01;
+                        });
+                    }
+                    
+                    // Autumn sky with warmer tones
+                    scene.background = new THREE.Color(0xFFA07A);
+                    scene.fog.color.setHex(0xFFA07A);
+                    break;
+            }
+
+            // Update house materials for seasonal effects
+            updateHouseSeasonalEffects();
+        }
+
+        function updateHouseSeasonalEffects() {
+            if (!house) return;
+
+            const roofSections = roof.children;
+            
+            switch (season) {
+                case 0: // Winter - snow on roof
+                    roofSections.forEach(roofSection => {
+                        roofSection.material.color.setHex(0xF0F8FF);
+                    });
+                    break;
+                    
+                case 1: // Spring - clean roof
+                    roofSections.forEach(roofSection => {
+                        roofSection.material.color.setHex(0x8B4513);
+                    });
+                    break;
+                    
+                case 2: // Summer - slight weathering
+                    roofSections.forEach(roofSection => {
+                        roofSection.material.color.setHex(0x8B4513);
+                    });
+                    break;
+                    
+                case 3: // Fall - leaves on roof
+                    roofSections.forEach(roofSection => {
+                        roofSection.material.color.setHex(0xA0522D);
+                    });
+                    break;
+            }
+        }
+
+        function setupControls() {
+            let mouseDown = false;
+            let mouseX = 0, mouseY = 0;
+
+            document.getElementById('canvas').addEventListener('mousedown', (event) => {
+                mouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+                isDragging = false;
+            });
+
+            document.addEventListener('mouseup', (event) => {
+                if (mouseDown && !isDragging) {
+                    handleClick(event);
+                }
+                mouseDown = false;
+                isDragging = false;
+            });
+
+            document.addEventListener('mousemove', (event) => {
+                mousePosition.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mousePosition.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                if (!mouseDown) return;
+
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+                const dragDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                if (dragDistance > 5) {
+                    isDragging = true;
+                    const spherical = new THREE.Spherical();
+                    spherical.setFromVector3(camera.position);
+                    spherical.theta -= deltaX * 0.01;
+                    spherical.phi += deltaY * 0.01;
+                    spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                    
+                    camera.position.setFromSpherical(spherical);
+                    camera.lookAt(0, 5, 0);
+                }
+
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+        }
+
+        function handleClick(event) {
+            raycaster.setFromCamera(mousePosition, camera);
+            const roofSections = roof.children;
+            const intersects = raycaster.intersectObjects(roofSections);
+
+            if (intersects.length > 0) {
+                const intersection = intersects[0];
+                const position = intersection.point.clone();
+                const normal = intersection.face.normal.clone();
+                normal.transformDirection(intersection.object.matrixWorld);
+                position.add(normal.multiplyScalar(0.1));
+
+                placeSolarPanel(position, intersection.object);
+            }
+        }
+
+        function placeSolarPanel(position, roofSection) {
+            const panelType = panelTypes[selectedPanelType];
+            
+            const panelGeometry = new THREE.BoxGeometry(2, 0.1, 1);
+            const panelMaterial = new THREE.MeshLambertMaterial({ 
+                color: panelType.color, 
+                transparent: true, 
+                opacity: 0.9 
+            });
+            const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+            
+            panel.position.copy(position);
+            panel.castShadow = true;
+            panel.receiveShadow = true;
+            
+            panel.userData = {
+                type: selectedPanelType,
+                power: panelType.power,
+                cost: panelType.cost,
+                efficiency: panelType.efficiency,
+                roofSection: roofSection.userData.section,
+                position: position.clone()
+            };
+
+            scene.add(panel);
+            solarPanels.push(panel);
+            updateSystemStats();
+            
+            console.log('Panel placed:', panel.userData);
+        }
+
+        function updateSystemStats() {
+            systemStats.totalPanels = solarPanels.length;
+            systemStats.totalCapacity = solarPanels.reduce((total, panel) => total + panel.userData.power, 0) / 1000;
+            
+            const totalRoofArea = roof.children.reduce((total, section) => total + section.userData.area, 0);
+            const panelArea = solarPanels.length * 2;
+            systemStats.roofCoverage = Math.min(100, (panelArea / totalRoofArea) * 100);
+            
+            if (solarPanels.length > 0) {
+                const totalEfficiency = solarPanels.reduce((total, panel) => total + panel.userData.efficiency, 0);
+                systemStats.avgEfficiency = totalEfficiency / solarPanels.length;
+            } else {
+                systemStats.avgEfficiency = 0;
+            }
+            
+            // Calculate costs
+            const equipmentCost = solarPanels.reduce((total, panel) => total + panel.userData.cost, 0);
+            const installationCost = equipmentCost * 0.5;
+            const permitsFees = Math.max(500, systemStats.totalCapacity * 100);
+            const inverterCost = systemStats.totalCapacity * 300;
+            
+            systemStats.totalCost = equipmentCost + installationCost + permitsFees + inverterCost;
+            
+            // Calculate savings
+            const baseProduction = systemStats.totalCapacity * 1200;
+            const efficiencyFactor = systemStats.avgEfficiency / 100;
+            const annualProduction = baseProduction * efficiencyFactor;
+            systemStats.annualSavings = annualProduction * 0.15;
+            
+            // Calculate payback
+            const federalTaxCredit = systemStats.totalCost * 0.30;
+            const netSystemCost = systemStats.totalCost - federalTaxCredit;
+            
+            if (systemStats.annualSavings > 0) {
+                systemStats.paybackPeriod = netSystemCost / systemStats.annualSavings;
+            } else {
+                systemStats.paybackPeriod = 0;
+            }
+            
+            // Calculate 25-year ROI
+            let totalSavings = 0;
+            for (let year = 1; year <= 25; year++) {
+                const yearlyDegradation = Math.pow(0.995, year - 1);
+                const yearlySavings = systemStats.annualSavings * yearlyDegradation;
+                totalSavings += yearlySavings;
+            }
+            systemStats.roi25Year = totalSavings - netSystemCost;
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('panelCount').textContent = systemStats.totalPanels;
+            document.getElementById('systemCapacity').textContent = systemStats.totalCapacity.toFixed(1) + ' kW';
+            document.getElementById('roofCoverage').textContent = systemStats.roofCoverage.toFixed(0) + '%';
+            document.getElementById('avgEfficiency').textContent = systemStats.avgEfficiency.toFixed(0) + '%';
+            
+            document.getElementById('totalCost').textContent = '$' + Math.round(systemStats.totalCost).toLocaleString();
+            document.getElementById('annualSavings').textContent = '$' + Math.round(systemStats.annualSavings).toLocaleString();
+            
+            if (systemStats.paybackPeriod > 0 && systemStats.paybackPeriod < 50) {
+                document.getElementById('paybackPeriod').textContent = systemStats.paybackPeriod.toFixed(1) + ' years';
+            } else {
+                document.getElementById('paybackPeriod').textContent = '-- years';
+            }
+            
+            document.getElementById('roiValue').textContent = '$' + Math.round(systemStats.roi25Year).toLocaleString();
+            
+            document.getElementById('efficiencyProgress').style.width = Math.min(100, systemStats.avgEfficiency) + '%';
+            
+            const roiPercentage = Math.min(100, Math.max(0, (systemStats.roi25Year + 20000) / 80000 * 100));
+            document.getElementById('roiProgress').style.width = roiPercentage + '%';
+        }
+
+        function setupEventListeners() {
+            document.getElementById('timeSlider').addEventListener('input', (e) => {
+                timeOfDay = parseFloat(e.target.value);
+                const hours = Math.floor(timeOfDay);
+                const minutes = Math.round((timeOfDay - hours) * 60);
+                document.getElementById('timeValue').textContent = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+                updateSunPosition();
+            });
+
+            document.getElementById('seasonSlider').addEventListener('input', (e) => {
+                season = parseInt(e.target.value);
+                const seasons = ['Winter', 'Spring', 'Summer', 'Fall'];
+                document.getElementById('seasonValue').textContent = seasons[season];
+                updateSunPosition();
+            });
+
+            document.getElementById('tiltSlider').addEventListener('input', (e) => {
+                panelTilt = parseInt(e.target.value);
+                document.getElementById('tiltValue').textContent = panelTilt + '°';
+            });
+
+            document.querySelectorAll('.panel-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    selectedPanelType = item.dataset.panel;
+                    document.querySelectorAll('.panel-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    
+                    console.log('Selected panel type:', selectedPanelType);
+                    
+                    // Show immediate visual feedback
+                    showPanelSelectionFeedback(selectedPanelType);
+                    
+                    // If there are existing panels, offer to upgrade them
+                    if (solarPanels.length > 0) {
+                        showUpgradeOption(selectedPanelType);
+                    }
+                });
+            });
+
+            document.getElementById('clearPanelsBtn').addEventListener('click', () => {
+                solarPanels.forEach(panel => scene.remove(panel));
+                solarPanels = [];
+                updateSystemStats();
+            });
+
+            document.getElementById('optimizeBtn').addEventListener('click', () => {
+                // Auto-place panels optimally
+                clearAllPanels();
+                selectedPanelType = 'premium';
+                
+                const southRoof = roof.children.find(section => section.userData.section === 'south');
+                if (southRoof) {
+                    for (let x = -4; x <= 4; x += 2.5) {
+                        for (let z = -4; z <= 4; z += 1.5) {
+                            const position = new THREE.Vector3(x, houseConfig.height + 2.2, z + 1);
+                            if (isValidPosition(position)) {
+                                placeSolarPanel(position, southRoof);
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('challengeBtn').addEventListener('click', () => {
+                triggerChallenge();
+            });
+
+            document.getElementById('vrBtn').addEventListener('click', () => {
+                enterVR();
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function clearAllPanels() {
+            solarPanels.forEach(panel => scene.remove(panel));
+            solarPanels = [];
+            updateSystemStats();
+        }
+
+        function isValidPosition(position) {
+            // Check distance from obstacles
+            const obstacles = [
+                { pos: new THREE.Vector3(-3, houseConfig.height + 3, 2), radius: 1.5 },
+                { pos: new THREE.Vector3(4, houseConfig.height + 1.5, -1), radius: 2 }
+            ];
+            
+            for (let obstacle of obstacles) {
+                if (position.distanceTo(obstacle.pos) < obstacle.radius) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function triggerChallenge() {
+            const challenges = [
+                {
+                    id: 'shading_issue',
+                    title: 'SHADING CHALLENGE',
+                    description: 'A large tree is casting shadows on 40% of your south-facing panels during peak hours (10 AM - 2 PM). Energy production is reduced by 35%.',
+                    consequence: 'How should you address this issue?',
+                    solutions: {
+                        relocate: { 
+                            correct: true, 
+                            result: 'Smart choice! Panels relocated to unshaded area. Full efficiency restored and customer satisfaction maintained!' 
+                        },
+                        address: { 
+                            correct: true, 
+                            result: 'Excellent! Tree trimming recommended to customer. Shading reduced by 80% while preserving landscape!' 
+                        },
+                        ignore: { 
+                            correct: false, 
+                            result: 'Poor decision. Energy production remains 35% below optimal. Customer disappointed with performance and ROI.' 
+                        }
+                    }
+                },
+                {
+                    id: 'roof_condition',
+                    title: 'ROOF CONDITION ALERT',
+                    description: 'Roof inspection reveals aging shingles in the primary installation area. Some sections may need replacement before panel installation.',
+                    consequence: 'What is your recommendation?',
+                    solutions: {
+                        relocate: { 
+                            correct: false, 
+                            result: 'Suboptimal choice. Moving to a less suitable area reduces system efficiency by 25% and customer savings.' 
+                        },
+                        address: { 
+                            correct: true, 
+                            result: 'Professional approach! Roof repair scheduled before installation. Project delayed 1 week but ensures 25-year warranty.' 
+                        },
+                        ignore: { 
+                            correct: false, 
+                            result: 'Dangerous decision. Installation proceeded but roof leak appears after 6 months, voiding warranty and damaging equipment.' 
+                        }
+                    }
+                },
+                {
+                    id: 'electrical_upgrade',
+                    title: 'ELECTRICAL UPGRADE NEEDED',
+                    description: 'Existing electrical panel is at capacity. The planned solar system requires electrical service upgrade from 100A to 200A.',
+                    consequence: 'How do you proceed?',
+                    solutions: {
+                        relocate: { 
+                            correct: false, 
+                            result: 'Poor choice. Smaller system reduces savings potential by 50%. Customer loses long-term financial benefits.' 
+                        },
+                        address: { 
+                            correct: true, 
+                            result: 'Expert decision! Electrical upgrade scheduled. Total project cost increases by $2,500 but maximizes solar benefits and safety.' 
+                        },
+                        ignore: { 
+                            correct: false, 
+                            result: 'Unsafe and illegal! System cannot be safely connected. Installation halted, project cancelled, reputation damaged.' 
+                        }
+                    }
+                },
+                {
+                    id: 'weather_window',
+                    title: 'WEATHER TIMING CHALLENGE',
+                    description: 'Installation is 50% complete when weather forecast shows 3 days of storms approaching. Panels are staged on roof but not secured.',
+                    consequence: 'What is your immediate action?',
+                    solutions: {
+                        relocate: { 
+                            correct: false, 
+                            result: 'Time-consuming choice. Moving panels delays completion by a week and increases labor costs unnecessarily.' 
+                        },
+                        address: { 
+                            correct: true, 
+                            result: 'Safety first! Panels properly secured and weather-proofed. Installation continues safely after storm passes.' 
+                        },
+                        ignore: { 
+                            correct: false, 
+                            result: 'Reckless decision! Storm damages unsecured panels and roof. Insurance claim, liability issues, and project restart required.' 
+                        }
+                    }
+                },
+                {
+                    id: 'neighbor_complaint',
+                    title: 'NEIGHBOR RELATIONS ISSUE',
+                    description: 'Neighbor complains that panel glare is affecting their home during morning hours. They threaten legal action.',
+                    consequence: 'How do you handle this professionally?',
+                    solutions: {
+                        relocate: { 
+                            correct: true, 
+                            result: 'Diplomatic solution! Panels repositioned slightly to eliminate glare while maintaining optimal performance. Neighbor satisfied.' 
+                        },
+                        address: { 
+                            correct: true, 
+                            result: 'Professional approach! Anti-glare coating applied and neighbor concerns addressed. Relationship preserved and legal issues avoided.' 
+                        },
+                        ignore: { 
+                            correct: false, 
+                            result: 'Legal nightmare! Lawsuit filed, project halted, and expensive court battle ensues. Reputation damaged in community.' 
+                        }
+                    }
+                }
+            ];
+            
+            const challenge = challenges[Math.floor(Math.random() * challenges.length)];
+            window.currentChallenge = challenge;
+            
+            document.getElementById('challengeDescription').textContent = challenge.description;
+            document.getElementById('challengeConsequence').textContent = challenge.consequence;
+            
+            // Update the challenge alert title
+            const alertTitle = document.querySelector('#challengeAlert h2');
+            alertTitle.textContent = '⚠️ ' + challenge.title;
+            
+            document.getElementById('challengeAlert').style.display = 'flex';
+        }
+
+        function showPanelSelectionFeedback(panelType) {
+            const panelData = panelTypes[panelType];
+            
+            // Create a feedback notification
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: absolute;
+                top: 120px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, rgba(255, 215, 0, 0.95), rgba(255, 165, 0, 0.95));
+                color: #000;
+                padding: 20px 30px;
+                border-radius: 15px;
+                font-weight: bold;
+                z-index: 1000;
+                pointer-events: none;
+                box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+                text-align: center;
+                min-width: 250px;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-size: 18px; margin-bottom: 5px;">📋 ${panelType.toUpperCase()} PANEL SELECTED</div>
+                <div style="font-size: 14px; opacity: 0.8;">
+                    ${panelData.power}W • ${panelData.cost} • ${panelData.efficiency}% efficiency
+                </div>
+                <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">
+                    Click on roof to place panels
+                </div>
+            `;
+            
+            document.querySelector('.ui-overlay').appendChild(notification);
+            
+            // Animate in
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(-50%) translateY(-20px)';
+            setTimeout(() => {
+                notification.style.transition = 'all 0.3s ease';
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(-50%) translateY(0)';
+            }, 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.transition = 'all 0.3s ease';
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(-50%) translateY(-20px)';
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        function showUpgradeOption(newPanelType) {
+            // Check if panels are actually different
+            const currentTypes = [...new Set(solarPanels.map(panel => panel.userData.type))];
+            if (currentTypes.length === 1 && currentTypes[0] === newPanelType) {
+                return; // No upgrade needed
+            }
+            
+            const newPanelData = panelTypes[newPanelType];
+            const currentCost = solarPanels.reduce((total, panel) => total + panel.userData.cost, 0);
+            const newCost = solarPanels.length * newPanelData.cost;
+            const costDifference = newCost - currentCost;
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: absolute;
+                top: 180px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(74, 144, 164, 0.95);
+                color: white;
+                padding: 20px;
+                border-radius: 15px;
+                font-weight: bold;
+                z-index: 1000;
+                pointer-events: auto;
+                box-shadow: 0 8px 25px rgba(74, 144, 164, 0.4);
+                text-align: center;
+                max-width: 400px;
+            `;
+            
+            const costText = costDifference >= 0 ? 
+                `+${Math.abs(costDifference).toLocaleString()} additional cost` : 
+                `-${Math.abs(costDifference).toLocaleString()} cost savings`;
+            
+            notification.innerHTML = `
+                <div style="font-size: 16px; margin-bottom: 10px;">🔄 UPGRADE EXISTING PANELS?</div>
+                <div style="font-size: 14px; margin-bottom: 15px; opacity: 0.9;">
+                    Change ${solarPanels.length} panels to ${newPanelType}<br>
+                    ${costText}
+                </div>
+                <button onclick="upgradeAllPanels('${newPanelType}'); this.parentElement.remove();" 
+                        style="background: #00FF7F; color: #000; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 0 5px; font-weight: bold;">
+                    ✓ Upgrade All
+                </button>
+                <button onclick="this.parentElement.remove();" 
+                        style="background: transparent; color: white; border: 1px solid white; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 0 5px;">
+                    Keep Current
+                </button>
+            `;
+            
+            document.querySelector('.ui-overlay').appendChild(notification);
+            
+            // Auto-remove after 15 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 15000);
+        }
+
+        window.upgradeAllPanels = function(newPanelType) {
+            if (!panelTypes[newPanelType]) return;
+            
+            const newPanelData = panelTypes[newPanelType];
+            let upgradedCount = 0;
+            
+            solarPanels.forEach(panel => {
+                // Update panel properties
+                const oldType = panel.userData.type;
+                panel.userData.type = newPanelType;
+                panel.userData.power = newPanelData.power;
+                panel.userData.cost = newPanelData.cost;
+                panel.userData.efficiency = newPanelData.efficiency;
+                
+                // Update visual appearance with animation
+                panel.material.color.setHex(newPanelData.color);
+                
+                // Add upgrade animation
+                const originalScale = panel.scale.clone();
+                panel.scale.set(1.2, 1.2, 1.2);
+                setTimeout(() => {
+                    panel.scale.copy(originalScale);
+                }, 200);
+                
+                upgradedCount++;
+                console.log(`Upgraded panel from ${oldType} to ${newPanelType}`);
+            });
+            
+            // Update system stats immediately
+            updateSystemStats();
+            
+            // Show upgrade confirmation
+            if (upgradedCount > 0) {
+                const confirmation = document.createElement('div');
+                confirmation.style.cssText = `
+                    position: absolute;
+                    top: 180px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0, 255, 127, 0.95);
+                    color: black;
+                    padding: 20px 30px;
+                    border-radius: 15px;
+                    font-weight: bold;
+                    z-index: 1000;
+                    pointer-events: none;
+                    box-shadow: 0 8px 25px rgba(0, 255, 127, 0.4);
+                    text-align: center;
+                `;
+                
+                const newCapacity = systemStats.totalCapacity;
+                const costChange = solarPanels.reduce((total, panel) => total + panel.userData.cost, 0);
+                
+                confirmation.innerHTML = `
+                    <div style="font-size: 18px; margin-bottom: 5px;">✅ UPGRADE COMPLETE!</div>
+                    <div style="font-size: 14px;">
+                        ${upgradedCount} panels upgraded to ${newPanelType}<br>
+                        New capacity: ${newCapacity.toFixed(1)} kW<br>
+                        Total cost: ${Math.round(systemStats.totalCost).toLocaleString()}
+                    </div>
+                `;
+                
+                document.querySelector('.ui-overlay').appendChild(confirmation);
+                
+                // Animate in and out
+                confirmation.style.opacity = '0';
+                setTimeout(() => {
+                    confirmation.style.transition = 'opacity 0.3s ease';
+                    confirmation.style.opacity = '1';
+                }, 10);
+                
+                setTimeout(() => {
+                    confirmation.style.opacity = '0';
+                    setTimeout(() => confirmation.remove(), 300);
+                }, 4000);
+            }
+        };
+
+        function animate() {
+            // Use XR animation loop when in VR, regular loop otherwise
+            if (renderer.xr.isPresenting) {
+                renderer.setAnimationLoop(animateVR);
+            } else {
+                requestAnimationFrame(animate);
+                animateRegular();
+            }
+        }
+
+        function animateVR() {
+            // VR-specific animation updates
+            animateRegular();
+            
+            // VR controller interaction
+            if (vrController1 && vrController2) {
+                // Update controller raycasting for interaction feedback
+                updateVRControllerInteractions();
+            }
+            
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        function animateRegular() {
+            // Animate falling snow in winter
+            if (season === 0) {
+                const snowParticles = scene.children.find(child => 
+                    child.userData && child.userData.type === 'snowParticles');
+                if (snowParticles && snowParticles.visible) {
+                    const positions = snowParticles.geometry.attributes.position.array;
+                    const velocities = snowParticles.userData.velocities;
+                    
+                    for (let i = 0; i < positions.length; i += 3) {
+                        positions[i] += velocities[i] * 0.1;
+                        positions[i + 1] += velocities[i + 1] * 0.1;
+                        positions[i + 2] += velocities[i + 2] * 0.1;
+                        
+                        if (positions[i + 1] < 0) {
+                            positions[i + 1] = 50 + Math.random() * 20;
+                            positions[i] = (Math.random() - 0.5) * 100;
+                            positions[i + 2] = (Math.random() - 0.5) * 100;
+                        }
+                        
+                        if (positions[i] > 50) positions[i] = -50;
+                        if (positions[i] < -50) positions[i] = 50;
+                        if (positions[i + 2] > 50) positions[i + 2] = -50;
+                        if (positions[i + 2] < -50) positions[i + 2] = 50;
+                    }
+                    
+                    snowParticles.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+            
+            // Animate fallen leaves in fall
+            if (season === 3) {
+                const fallenLeaves = scene.children.find(child => 
+                    child.userData && child.userData.type === 'fallenLeaves');
+                if (fallenLeaves && fallenLeaves.visible) {
+                    fallenLeaves.children.forEach((leaf, index) => {
+                        leaf.rotation.z += Math.sin(Date.now() * 0.0005 + index) * 0.002;
+                        leaf.position.x += Math.sin(Date.now() * 0.0003 + index) * 0.001;
+                        leaf.position.z += Math.cos(Date.now() * 0.0002 + index) * 0.001;
+                    });
+                }
+            }
+            
+            if (!renderer.xr.isPresenting && renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        function updateVRControllerInteractions() {
+            // Highlight objects that can be interacted with
+            [vrController1, vrController2].forEach(controller => {
+                if (!controller) return;
+                
+                raycaster.setFromXRController(controller);
+                const intersects = raycaster.intersectObjects(roof.children);
+                
+                // Visual feedback for where panels can be placed
+                if (intersects.length > 0) {
+                    const intersection = intersects[0];
+                    const roofSection = intersection.object;
+                    
+                    // Highlight the roof section
+                    roofSection.material.emissive.setHex(0x222222);
+                } else {
+                    // Remove highlight
+                    roof.children.forEach(section => {
+                        section.material.emissive.setHex(0x000000);
+                    });
+                }
+            });
+        }
+
+        // Initialize when Three.js is loaded
+        window.addEventListener('load', function() {
+            if (typeof THREE !== 'undefined') {
+                console.log('Three.js loaded successfully');
+            } else {
+                console.error('Three.js failed to load');
+            }
+        });
+    </script>
+</body>
+</html>
